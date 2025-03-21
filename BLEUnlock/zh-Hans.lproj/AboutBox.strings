@@ -9,3 +9,9 @@
 
 /* Class = "NSWindow"; title = "About BLEUnlock"; ObjectID = "hgX-Z1-8qq"; */
 "hgX-Z1-8qq.title" = "关于BLEUnlock";
+
+/* Class = "NSTextFieldCell"; title = "Original work Copyright © 2019-2022 Takeshi Sone"; ObjectID = "GN4-8z-o8I"; */
+"GN4-8z-o8I.title" = "原作版权所有 © 2019-2022 Takeshi Sone";
+
+/* Class = "NSTextFieldCell"; title = "Modified version by SQHOME-Jin"; ObjectID = "mod-cell"; */
+"mod-cell.title" = "由 SQHOME-Jin 修改的版本";

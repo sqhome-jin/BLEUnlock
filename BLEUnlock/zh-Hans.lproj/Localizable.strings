@@ -27,7 +27,7 @@
 "pause_now_playing" = "锁定时暂停\"播放中\"";
 "quit" = "退出BLEUnlock";
 "scanning" = "扫描中…";
-"seconds" = "秒钟";
+"seconds" = "秒";
 "set_password" = "设置密码…";
 "set_rssi_threshold" = "设置最小RSSI…";
 "sleep_display" = "锁定时关闭屏幕";
@@ -36,3 +36,6 @@
 "use_screensaver_to_lock" = "用屏保来锁定它";
 "wake_on_proximity" = "靠近唤醒";
 "wake_without_unlocking" = "唤醒时不需解锁";
+"unlock_delay" = "解锁延迟";
+"shorter" = "⬆更短";
+"longer" = "⬇更长";

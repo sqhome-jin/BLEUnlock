@@ -16,6 +16,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
     let unlockRSSIMenu = NSMenu()
     let timeoutMenu = NSMenu()
     let lockDelayMenu = NSMenu()
+    let unlockDelayMenu = NSMenu()
     var deviceDict: [UUID: NSMenuItem] = [:]
     var monitorMenuItem : NSMenuItem?
     let prefs = UserDefaults.standard
@@ -61,6 +62,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         } else if menu == lockDelayMenu {
             for item in menu.items {
                 if item.tag == Int(ble.proximityTimeout) {
+                    item.state = .on
+                } else {
+                    item.state = .off
+                }
+            }
+        } else if menu == unlockDelayMenu {
+            let currentDelay = Int(prefs.double(forKey: "unlockDelay") * 10)
+            for item in menu.items {
+                if item.tag == currentDelay {
                     item.state = .on
                 } else {
                     item.state = .off
@@ -294,8 +304,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
 
         guard !self.prefs.bool(forKey: "wakeWithoutUnlocking") else { return }
 
-        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false, block: { _ in
-            guard self.isScreenLocked() else { return }
+        let unlockDelay = prefs.double(forKey: "unlockDelay")
+        Timer.scheduledTimer(withTimeInterval: unlockDelay > 0 ? unlockDelay : 0.5, repeats: false, block: { _ in
+            guard self.isScreenLocked() else { 
+                print("Screen already unlocked by other means")
+                return 
+            }
             guard let password = self.fetchPassword(warn: true) else { return }
             
             print("Entering password")
@@ -514,6 +528,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         ble.proximityTimeout = Double(value)
     }
 
+    @objc func setUnlockDelay(_ menuItem: NSMenuItem) {
+        let value = Double(menuItem.tag) / 10.0
+        prefs.set(value, forKey: "unlockDelay")
+    }
+
     @objc func toggleLaunchAtLogin(_ menuItem: NSMenuItem) {
         let launchAtLogin = !prefs.bool(forKey: "launchAtLogin")
         prefs.set(launchAtLogin, forKey: "launchAtLogin")
@@ -572,7 +591,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         menu.addItem(withTitle: t("farther"), action: nil, keyEquivalent: "")
         menu.delegate = self
     }
-    
+
+    func constructUnlockDelayMenu(_ menu: NSMenu) {
+        menu.addItem(withTitle: t("shorter"), action: nil, keyEquivalent: "")
+        for delay in stride(from: 5, through: 30, by: 5) {
+            let delayInSeconds = Double(delay) / 10.0
+            let item = menu.addItem(withTitle: String(format: "%.1f " + t("seconds"), delayInSeconds), 
+                                  action: #selector(setUnlockDelay), 
+                                  keyEquivalent: "")
+            item.tag = delay
+        }
+        menu.addItem(withTitle: t("longer"), action: nil, keyEquivalent: "")
+        menu.delegate = self
+    }
+
     func constructMenu() {
         monitorMenuItem = mainMenu.addItem(withTitle: t("device_not_set"), action: nil, keyEquivalent: "")
         
@@ -654,6 +686,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         mainMenu.addItem(withTitle: t("set_rssi_threshold"), action: #selector(setRSSIThreshold),
                          keyEquivalent: "")
 
+        item = mainMenu.addItem(withTitle: t("unlock_delay"), action: nil, keyEquivalent: "")
+        item.submenu = unlockDelayMenu
+        constructUnlockDelayMenu(unlockDelayMenu)
+
         mainMenu.addItem(NSMenuItem.separator())
         mainMenu.addItem(withTitle: t("about"), action: #selector(showAboutBox), keyEquivalent: "")
         mainMenu.addItem(NSMenuItem.separator())
@@ -729,6 +765,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemVa
         // This is required because we can't have LSUIElement set to true in Info.plist,
         // otherwise CBCentralManager.scanForPeripherals won't work.
         NSApp.setActivationPolicy(.accessory)
+
+        // 添加解锁延迟的默认值设置
+        if prefs.double(forKey: "unlockDelay") == 0 {
+            prefs.set(0.5, forKey: "unlockDelay")
+        }
     }
     
     func applicationWillTerminate(_ aNotification: Notification) {
